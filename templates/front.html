@@ -1,0 +1,15 @@
+<!doctype html>
+<a href="/submit">Submit Link</a>
+
+{% if not posts %}
+<p>No posts :(</p>
+{% else %}
+
+{% for p in posts %}
+<div class="post">
+    <a href="/vote/{{p.id}}">^</a> <span>({{p.upvotes}}|{{p.downvotes}})</span> - <a href="{{p.link}}">{{p.title}}</a>
+</div>
+
+{% endfor %}
+
+{% endif %}
