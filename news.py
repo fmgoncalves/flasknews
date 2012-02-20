@@ -24,17 +24,19 @@ class Post(db.Model):
         self.time = date.today().ctime() 
 
     def __repr__(self):
-        return '<Post %r (%r)>' % (self.title, self.link)
+        return '<Post %r(%r)>' % (self.title, self.score())
 
     def score(self):
         try:
-            return (1.0 * self.upvotes) / (self.upvotes + self.downvotes)
+            return self.upvotes # purely based on upvotes right now
+            #return (self.upvotes) / (self.upvotes + self.downvotes)
         except ZeroDivisionError:
             return 0
 
 @app.route('/')
 def index():
-    posts = sorted(Post.query.all(), key=lambda x: 1-x.score())
+    posts = sorted(Post.query.all(), key=lambda x: x.score(), reverse=True)
+    print posts
     return render_template('front.html', posts=posts)
 
 @app.route('/submit', methods=['GET', 'POST'])
