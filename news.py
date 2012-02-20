@@ -3,6 +3,8 @@
 from flask import Flask, render_template, request, url_for, redirect
 from flaskext.sqlalchemy import SQLAlchemy
 
+from datetime import date 
+
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///news.db'
 db = SQLAlchemy(app)
@@ -13,18 +15,26 @@ class Post(db.Model):
     link = db.Column(db.String(255))
     upvotes = db.Column(db.Integer)
     downvotes = db.Column(db.Integer)
+    time = db.Column(db.Integer)
 
     def __init__(self, title, link):
         self.title = title
         self.link = link
         self.upvotes = self.downvotes = 0
+        self.time = date.today().ctime() 
 
     def __repr__(self):
         return '<Post %r (%r)>' % (self.title, self.link)
 
+    def score(self):
+        try:
+            return (1.0 * self.upvotes) / (self.upvotes + self.downvotes)
+        except ZeroDivisionError:
+            return 0
+
 @app.route('/')
 def index():
-    posts = Post.query.order_by('-upvotes').all()
+    posts = sorted(Post.query.all(), key=lambda x: 1-x.score())
     return render_template('front.html', posts=posts)
 
 @app.route('/submit', methods=['GET', 'POST'])
@@ -44,7 +54,7 @@ def vote(pid):
     p = Post.query.filter_by(id=pid).all()[0]
     if direction == 'up':
         p.upvotes += 1
-    else:
+    elif direction == 'down':
         p.downvotes += 1
 
     db.session.add(p)
@@ -53,4 +63,8 @@ def vote(pid):
 
 
 if __name__=='__main__':
+    import sys
+    if '--create-db' in sys.argv:
+        db.create_all()
+        sys.exit(0)
     app.run(debug=True)

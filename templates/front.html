@@ -1,5 +1,7 @@
-<!doctype html>
-<a href="/submit">Submit Link</a>
+{% extends 'base.html' %}
+{% block title%}Listing{% endblock %}
+
+{% block content %}
 
 {% if not posts %}
 <p>No posts :(</p>
@@ -7,9 +9,17 @@
 
 {% for p in posts %}
 <div class="post">
-    <a href="/vote/{{p.id}}">^</a> <span>({{p.upvotes}}|{{p.downvotes}})</span> - <a href="{{p.link}}">{{p.title}}</a>
-</div>
+    <div class="arrows">
+        <div class="upvote"><a href="/vote/{{p.id}}"><i class="icon-arrow-up"></i></a></div>
+    </div>
 
+    <div class="link">
+        <p><b>{{p.upvotes}}</b> - <a href="{{p.link}}">{{p.title}}</a></p>
+        <p>0 comments. submitted by {name} on <strong>{{p.time}}</strong></p>
+    </div>
+</div>
 {% endfor %}
 
 {% endif %}
+
+{% endblock %}
