@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+{% block title%}Comments{% endblock %}
+
+{% block content %}
+
+<div class="link">
+        <p><a href="{{p.link}}">{{p.title}}</a></p>
+		{% if p.content %}
+        	<p>{{p.content}}</p>
+        {% endif %}
+        <p><a href="/comments/{{p.id}}">{{p.n_comments()}} comments</a>. submitted by {{p.submitter}} on <strong>{{p.prettytime()}}</strong></p>
+</div>
+
+<br/>
+
+<form class="form-vertical" method="post" action="/comment">
+    <div class="control-group">
+        <div class="controls">
+            <input type="text" name="content" class="input-xxlarge" />
+        </div>
+    </div>
+    <input name="pid" type="hidden" value="{{p.id}}" />
+    <div class="control-group">
+        <div class="controls">
+            <button type="submit" class="btn btn-primary">Add comment</button>
+        </div>
+    </div>
+</form>
+
+{% if not comments %}
+<p>No comments :(</p>
+{% else %}
+
+{% for c in comments %}
+<div class="comment">
+    <div class="link">
+        <p>{{c.submitter}} on <strong>{{c.prettytime()}}</strong></p>
+        <p>{{c.content}}</p>
+    </div>
+</div>
+{% endfor %}
+
+{% endif %}
+
+{% endblock %}
