@@ -142,6 +142,8 @@ def comment():
 def submit():
     if request.method == 'POST':
         submission = Post(request.form['title'], request.form['link'], session['username'], request.form['content'])
+        submission.upvotes = 1
+        vote_cache[submission.id].add(session['username'])
         db.session.add(submission)
         db.session.commit()
         return redirect(url_for('index'))
