@@ -125,7 +125,7 @@ def index():
 @app.route('/comments/<int:pid>', methods=['GET'])
 def comments(pid):
     p = Post.query.filter_by(id=pid).first()
-    comments = sorted(Comment.query.filter_by(parent_post=p.id), key=lambda x: x.time, reverse=True)
+    comments = sorted(Comment.query.filter_by(parent_post=p.id), key=lambda x: x.time, reverse=False)
     return render_template('comments.html', p=p, comments=comments)
 
 @app.route('/comment', methods=['POST'])
