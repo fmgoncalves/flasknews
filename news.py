@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from flask import Flask, render_template, request, url_for, redirect, Response
+from flask import Flask, render_template, request, url_for, session, redirect, Response
 from flask.ext.sqlalchemy import SQLAlchemy
 
 from functools import wraps
@@ -14,6 +14,7 @@ from hashlib import sha512
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///news.db'
+app.secret_key = 'Z\x1f7Y\xa53/\x9f\x9b\xc6\xc3V\x07GLA\xdd}zl\x92W\xad\xfb'
 db = SQLAlchemy(app)
 
 
@@ -29,21 +30,33 @@ class User(db.Model):
 
 def check_auth(username, password):
     user = User.query.filter_by(username=username).first()
-    valid_auth = user.username == username and user.password_hash == sha512(password).hexdigest()
+    valid_auth = user and user.username == username and user.password_hash == sha512(password).hexdigest()
     return valid_auth
 
-def authenticate():
-    """Sends a 401 response that enables basic auth"""
-    return Response(
-    'Y u fake login?\n', 401,
-    {'WWW-Authenticate': 'Basic realm="Login Required"'})
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        origin = request.form["origin"] if "origin" in request.form else 'index'
+        if check_auth(request.form["username"], request.form["password"]):
+            session['username'] = request.form['username']
+            return redirect(url_for(origin))
+        else:
+            return render_template('login.html', origin=origin, error='Invalid Username/Password')
+    else:
+        origin = request.args.get('origin','index')
+        return render_template('login.html', origin=origin)
+
+@app.route('/logout')
+def logout():
+    # remove the username from the session if it's there
+    session.pop('username', None)
+    return redirect(url_for('index'))
 
 def requires_auth(f):
     @wraps(f)
     def decorated(*args, **kwargs):
-        auth = request.authorization
-        if not auth or not check_auth(auth.username, auth.password):
-            return authenticate()
+        if not 'username' in session:
+            return redirect(url_for('login', origin=f.__name__))
         return f(*args, **kwargs)
     return decorated
 
@@ -119,7 +132,7 @@ def comments(pid):
 @requires_auth
 def comment():
     parent_post = request.form['pid']
-    submission = Comment(parent_post, request.form['content'], request.authorization['username'])
+    submission = Comment(parent_post, request.form['content'], session['username'])
     db.session.add(submission)
     db.session.commit()
     return redirect(url_for('comments',pid=parent_post))
@@ -128,7 +141,7 @@ def comment():
 @requires_auth
 def submit():
     if request.method == 'POST':
-        submission = Post(request.form['title'], request.form['link'], request.authorization['username'], request.form['content'])
+        submission = Post(request.form['title'], request.form['link'], session['username'], request.form['content'])
         db.session.add(submission)
         db.session.commit()
         return redirect(url_for('index'))
@@ -139,7 +152,7 @@ def submit():
 @app.route('/vote/<int:pid>', methods=['GET'])
 @requires_auth
 def vote(pid):
-    voter = request.authorization['username']
+    voter = session['username']
 
     if voter not in vote_cache[pid]:
         direction = request.args.get('d','up')
