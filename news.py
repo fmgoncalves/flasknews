@@ -20,7 +20,7 @@ db = SQLAlchemy(app)
 ### AUTHENTICATION
 
 class User(db.Model):
-    username = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String, primary_key=True)
     password_hash = db.Column(db.String(128))
 
     def __init__(self, username, password):
@@ -28,12 +28,8 @@ class User(db.Model):
         self.password_hash = sha512(password).hexdigest()
 
 def check_auth(username, password):
-    valid_auth = False
-    if username == 'admin' and password == 'password':
-        valid_auth = True
-    else:
-        user = Post.query.filter_by(username=username).first()
-        valid_auth = user.username == username and user.password_hash == sha512(password).hexdigest()
+    user = User.query.filter_by(username=username).first()
+    valid_auth = user.username == username and user.password_hash == sha512(password).hexdigest()
     return valid_auth
 
 def authenticate():
@@ -162,9 +158,47 @@ def vote(pid):
     return redirect(url_for('index'))
 
 
+def add_user():
+    username = raw_input('Username: ')
+    
+    if not username:
+        print 'Username is mandatory'
+        return
+    
+    MIN_PASSWORD_LENGTH = 4
+    password = raw_input('Password: ')
+    if len(password) < MIN_PASSWORD_LENGTH:
+        print 'Password must be at least {} characters long'.format(MIN_PASSWORD_LENGTH)
+        return
+
+    if User.query.filter_by(username=username).count() > 0:
+        print 'User {} already exists'.format(username)
+    else:
+        u = User(username, password)
+        db.session.add(u)
+        db.session.commit()
+        print 'User {} added'.format(username)
+
+
 if __name__=='__main__':
+    
+    import argparse
+
+    optparser = argparse.ArgumentParser(description='FlaskNews')
+    optparser.add_argument('--create_db', help='Create SQLite database.', action='store_true')
+    optparser.add_argument('-d','--debug', help='Extended runtime info.', action='store_true')
+    optparser.add_argument('--host', type=str, default='0.0.0.0', help='IP to serve site.')
+    optparser.add_argument('-p','--port', type=int, default=8080, help='Port to serve site.')
+    optparser.add_argument('--add_user', help='Add user credentials to database.', action='store_true')
+
+    options = optparser.parse_args()
+
     import sys
-    if '--create-db' in sys.argv:
+    if options.create_db:
         db.create_all()
         sys.exit(0)
-    app.run(port=5001,debug=True)
+    elif options.add_user:
+        add_user()
+        sys.exit(0)
+
+    app.run(host=options.host,port=options.port,debug=options.debug)
