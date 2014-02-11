@@ -2,6 +2,7 @@
 
 from flask import Flask, render_template, request, url_for, session, redirect, Response
 from flask.ext.sqlalchemy import SQLAlchemy
+from sqlalchemy.exc import IntegrityError
 
 from functools import wraps
 
@@ -11,6 +12,7 @@ from calendar import timegm
 from collections import defaultdict
 
 from hashlib import sha512
+import sys
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///news.db'
@@ -36,15 +38,13 @@ def check_auth(username, password):
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        origin = request.form["origin"] if "origin" in request.form else 'index'
         if check_auth(request.form["username"], request.form["password"]):
             session['username'] = request.form['username']
-            return redirect(url_for(origin))
+            return redirect(url_for('index'))
         else:
-            return render_template('login.html', origin=origin, error='Invalid Username/Password')
+            return render_template('login.html', error='Invalid Username/Password')
     else:
-        origin = request.args.get('origin','index')
-        return render_template('login.html', origin=origin)
+        return render_template('login.html')
 
 @app.route('/logout')
 def logout():
@@ -56,25 +56,26 @@ def requires_auth(f):
     @wraps(f)
     def decorated(*args, **kwargs):
         if not 'username' in session:
-            return redirect(url_for('login', origin=f.__name__))
+            return redirect(url_for('login'))
         return f(*args, **kwargs)
     return decorated
 
 ###
 
-vote_cache = defaultdict(set)
+vote_cache = defaultdict(set) # TODO put this in the database
 
 class Post(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(255))
-    content = db.Column(db.String(255))
+    content = db.deferred(db.Column(db.String))
     link = db.Column(db.String(255))
-    submitter = db.Column(db.String(255), db.ForeignKey('user.username'))
+    submitter = db.Column(db.String, db.ForeignKey('user.username'))
     upvotes = db.Column(db.Integer)
     downvotes = db.Column(db.Integer)
     time = db.Column(db.Integer)
 
     def __init__(self, title, link, submitter, content=str()):
+        self.id = int(sha512('{}{}{}'.format(title,link,content)).hexdigest(),base=16) % sys.maxint
         self.title = title
         self.link = link
         self.submitter = submitter
@@ -102,7 +103,7 @@ class Comment(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     parent_post = db.Column(db.Integer, db.ForeignKey('post.id'))
     content = db.Column(db.String(255))
-    submitter = db.Column(db.String(255), db.ForeignKey('user.username'))
+    submitter = db.Column(db.String, db.ForeignKey('user.username'))
     time = db.Column(db.Integer)
 
     def __init__(self, post_id, content, submitter):
@@ -119,7 +120,7 @@ class Comment(db.Model):
 
 @app.route('/')
 def index():
-    posts = sorted(Post.query.all(), key=lambda x: x.score(), reverse=True)
+    posts = sorted(Post.query.all(), key=lambda x: x.time + (x.score() * 600), reverse=True)
     return render_template('front.html', posts=posts)
 
 @app.route('/comments/<int:pid>', methods=['GET'])
@@ -145,8 +146,13 @@ def submit():
         submission.upvotes = 1
         vote_cache[submission.id].add(session['username'])
         db.session.add(submission)
-        db.session.commit()
-        return redirect(url_for('index'))
+        try:
+            db.session.commit()
+            return redirect(url_for('index'))
+        except IntegrityError as e:
+            return render_template('submit.html', error='Duplicated submission')
+        except:
+            return render_template('submit.html', error='Failed to submit')
     else:
         return render_template('submit.html')
 
@@ -208,7 +214,6 @@ if __name__=='__main__':
 
     options = optparser.parse_args()
 
-    import sys
     if options.create_db:
         db.create_all()
         sys.exit(0)

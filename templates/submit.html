@@ -2,6 +2,15 @@
 {% block title %}Submit link{%endblock%}
 
 {% block content %}
+
+{% if error %}
+ <div class="col-sm-6 col-md-6">
+    <div class="alert-message alert-message-warning">
+        <h4>{{error}}</h4>
+    </div>
+</div>
+{% endif %}
+
 <div class="row">
 <form class="form-horizontal" method="post" action="/submit">
     <div class="control-group">
