@@ -75,7 +75,7 @@ class Post(db.Model):
     time = db.Column(db.Integer)
 
     def __init__(self, title, link, submitter, content=str()):
-        self.id = int(sha512('{}{}{}'.format(title,link,content)).hexdigest(),base=16) % sys.maxint
+        self.id = int(sha512(u'{}{}{}'.format(title,link,content).encode("utf-8")).hexdigest(),base=16) % sys.maxint
         self.title = title
         self.link = link
         self.submitter = submitter
