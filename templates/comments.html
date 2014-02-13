@@ -6,7 +6,7 @@
 <div class="link">
         <p><a href="{{p.link}}">{{p.title}}</a></p>
 		{% if p.content %}
-        	<p>{{p.content}}</p>
+        	<p>{{p.content|urlize}}</p>
         {% endif %}
         <p><a href="/comments/{{p.id}}">{{p.n_comments()}} comments</a>. submitted by {{p.submitter}} on <strong>{{p.prettytime()}}</strong></p>
 </div>
@@ -35,7 +35,7 @@
 <div class="comment">
     <div class="link">
         <p>{{c.submitter}} on <strong>{{c.prettytime()}}</strong></p>
-        <p>{{c.content}}</p>
+        <p>{{c.content|urlize}}</p>
     </div>
 </div>
 {% endfor %}
