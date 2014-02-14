@@ -3,11 +3,13 @@
 from flask import Flask, render_template, request, url_for, session, redirect, Response
 from flask.ext.sqlalchemy import SQLAlchemy
 from sqlalchemy.exc import IntegrityError
+from werkzeug.contrib.atom import AtomFeed
 
 from functools import wraps
 
 from time import gmtime, ctime
 from calendar import timegm
+from datetime import datetime
 
 from collections import defaultdict
 
@@ -178,6 +180,28 @@ def vote(pid):
 
     return redirect(url_for('index'))
 
+
+### FEED
+
+@app.route('/recent.atom')
+def recent_feed():
+    feed = AtomFeed('Recent Articles',
+        feed_url=request.url, url=request.url_root)
+    posts = Post.query.order_by(Post.time.desc()).limit(10).all()
+    for post in posts:
+        feed.add(
+            post.title,
+            post.content,
+            content_type='text',
+            author=post.submitter,
+            url=url_for('comments',pid=post.id),
+            links=[ { 'href' : post.link } ],
+            #categories=list(), # TODO need to have post tags first
+            updated=datetime.utcfromtimestamp(post.time)
+        )
+    return feed.get_response()
+
+###
 
 def add_user():
     username = raw_input('Username: ')

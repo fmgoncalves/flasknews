@@ -1,6 +1,10 @@
 {% extends 'base.html' %}
 {% block title%}Stories{% endblock %}
 
+{% block headextra %}
+<link rel="alternate" type="application/atom+xml" title="Feed" href="{{ url_for('recent_feed') }}">
+{% endblock %}
+
 {% block content %}
 
 {% if not posts %}
