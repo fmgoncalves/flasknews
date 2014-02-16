@@ -71,15 +71,17 @@ class Post(db.Model):
     title = db.Column(db.String(255))
     content = db.deferred(db.Column(db.String))
     link = db.Column(db.String(255))
+    tag = db.Column(db.String(255))
     submitter = db.Column(db.String, db.ForeignKey('user.username'))
     upvotes = db.Column(db.Integer)
     downvotes = db.Column(db.Integer)
     time = db.Column(db.Integer)
 
-    def __init__(self, title, link, submitter, content=str()):
-        self.id = int(sha512(u'{}{}{}'.format(title,link,content).encode("utf-8")).hexdigest(),base=16) % sys.maxint
+    def __init__(self, title, link, tag, submitter, content=str()):
+        self.id = int(sha512(u'{}{}{}'.format(title,link,content,tag).encode("utf-8")).hexdigest(),base=16) % sys.maxint
         self.title = title
         self.link = link
+        self.tag = tag
         self.submitter = submitter
         self.upvotes = self.downvotes = 0
         self.time = timegm(gmtime())
@@ -144,7 +146,7 @@ def comment():
 @requires_auth
 def submit():
     if request.method == 'POST':
-        submission = Post(request.form['title'], request.form['link'], session['username'], request.form['content'])
+        submission = Post(request.form['title'], request.form['link'], request.form['tag'], session['username'], request.form['content'])
         submission.upvotes = 1
         vote_cache[submission.id].add(session['username'])
         db.session.add(submission)
