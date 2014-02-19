@@ -94,7 +94,7 @@ class Post(db.Model):
 
     def score(self):
         try:
-            votes_list = Vote.query.filter_by(post=self.id, submitter=self.submitter).all()
+            votes_list = Vote.query.filter_by(post=self.id).all()
             # TODO sum the values in the database
             return sum(map(lambda x: x.value, votes_list))
         except ZeroDivisionError:
@@ -167,7 +167,7 @@ class Vote(db.Model):
         self.value = value
 
     def __repr__(self):
-        return '<%rvote on %r by %r>' % ( 'up' if self.value == 1 else 'down', self.parent_post, self.submitter)
+        return '<%rvote on %r by %r>' % ( 'up' if self.value == 1 else 'down', self.post, self.submitter)
 
 @app.route('/vote/<int:pid>', methods=['GET'])
 @requires_auth
