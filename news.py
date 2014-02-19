@@ -22,7 +22,7 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///news.db'
 app.secret_key = 'Z\x1f7Y\xa53/\x9f\x9b\xc6\xc3V\x07GLA\xdd}zl\x92W\xad\xfb'
 db = SQLAlchemy(app)
 
-tag_colors = ['#FF9900', '#424242', '#E9E9E9', '#BCBCBC', '#3299BB']
+tag_colors = ['FF9900', '424242', 'E9E9E9', 'BCBCBC', '3299BB']
 
 ### AUTHENTICATION
 
@@ -105,6 +105,16 @@ class Post(db.Model):
         tag = self.tag
         color_idx = int(sha512(u'{}'.format(tag.lower()).encode('utf-8')).hexdigest(),base=16) % len(tag_colors)
         return tag_colors[color_idx]
+
+    def tagtextcolor(self):
+        tag_color = int(self.tagcolor(), base=16)
+        r = (tag_color >> 16) & 0xff
+        g = (tag_color >> 8) & 0xff
+        b = (tag_color >> 0) & 0xff
+        luma = 0.2126 * r + 0.7152 * g + 0.0722 * b  # shamelessly copied from stackoverflow
+        if luma < 80:
+            return 'white'
+        return 'black'
 
 
 class Comment(db.Model):
