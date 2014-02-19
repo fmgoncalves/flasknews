@@ -10,6 +10,7 @@ from functools import wraps
 from time import gmtime, ctime
 from calendar import timegm
 from datetime import datetime
+from random import randint
 
 from collections import defaultdict
 
@@ -64,8 +65,6 @@ def requires_auth(f):
 
 ###
 
-vote_cache = defaultdict(set) # TODO put this in the database
-
 class Post(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(255))
@@ -73,8 +72,6 @@ class Post(db.Model):
     link = db.Column(db.String(255))
     tag = db.Column(db.String(255))
     submitter = db.Column(db.String, db.ForeignKey('user.username'))
-    upvotes = db.Column(db.Integer)
-    downvotes = db.Column(db.Integer)
     time = db.Column(db.Integer)
 
     def __init__(self, title, link, tag, submitter, content=str()):
@@ -83,7 +80,6 @@ class Post(db.Model):
         self.link = link
         self.tag = tag
         self.submitter = submitter
-        self.upvotes = self.downvotes = 0
         self.time = timegm(gmtime())
         self.content = content
 
@@ -98,8 +94,9 @@ class Post(db.Model):
 
     def score(self):
         try:
-            return self.upvotes - self.downvotes
-            #return (self.upvotes) / (self.upvotes + self.downvotes)
+            votes_list = Vote.query.filter_by(post=self.id, submitter=self.submitter).all()
+            # TODO sum the values in the database
+            return sum(map(lambda x: x.value, votes_list))
         except ZeroDivisionError:
             return 0
 
@@ -147,8 +144,7 @@ def comment():
 def submit():
     if request.method == 'POST':
         submission = Post(request.form['title'], request.form['link'], request.form['tag'], session['username'], request.form['content'])
-        submission.upvotes = 1
-        vote_cache[submission.id].add(session['username'])
+        vote(submission.id)
         db.session.add(submission)
         try:
             db.session.commit()
@@ -160,25 +156,41 @@ def submit():
     else:
         return render_template('submit.html')
 
+class Vote(db.Model):
+    post = db.Column(db.Integer, db.ForeignKey('post.id'), primary_key=True)
+    submitter = db.Column(db.String, db.ForeignKey('user.username'), primary_key=True)
+    value = db.Column(db.Integer)
+
+    def __init__(self, post_id, submitter, value):
+        self.post = post_id
+        self.submitter = submitter
+        self.value = value
+
+    def __repr__(self):
+        return '<%rvote on %r by %r>' % ( 'up' if self.value == 1 else 'down', self.parent_post, self.submitter)
 
 @app.route('/vote/<int:pid>', methods=['GET'])
 @requires_auth
 def vote(pid):
     voter = session['username']
 
-    if voter not in vote_cache[pid]:
-        direction = request.args.get('d','up')
+    vote = 0
+    direction = request.args.get('d','up')
 
-        p = Post.query.filter_by(id=pid).first()
-        if direction == 'up':
-            p.upvotes += 1
-        elif direction == 'down':
-            p.downvotes += 1
+    if direction == 'up':
+        vote = 1
+    elif direction == 'down':
+        vote = -1
+    elif direction == 'random':
+        vote = randint(-1,1)
 
-        db.session.add(p)
-        db.session.commit()
-
-        vote_cache[pid].add(voter)
+    if vote != 0:
+        v = Vote(pid, session['username'], vote)
+        db.session.add(v)
+        try:
+            db.session.commit()
+        except IntegrityError as e:
+            print 'User {} tried to repeat vote on {}'.format(session['username'], pid)
 
     return redirect(url_for('index'))
 
@@ -189,7 +201,7 @@ def vote(pid):
 def recent_feed():
     feed = AtomFeed('Recent Articles',
         feed_url=request.url, url=request.url_root)
-    posts = Post.query.order_by(Post.time.desc()).limit(10).all()
+    posts = Post.query.order_by(Post.time.desc()).limit(50).all()
     for post in posts:
         feed.add(
             post.title,
