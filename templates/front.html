@@ -20,7 +20,7 @@
     </div>
 
     <div class="link">
-        <p><b>{{p.score()}}</b> - {% if p.tag %} <span class="posttag">{{p.tag}}</span> {% endif %} {% if p.link %} <a href="{{p.link}}"> {% else %} <a href="/comments/{{p.id}}"> {% endif %}{{p.title}}</a></p>
+        <p><b>{{p.score()}}</b> - {% if p.tag %} <span class="posttag" style="background-color: {{p.tagcolor()}};">{{p.tag}}</span> {% endif %} {% if p.link %} <a href="{{p.link}}"> {% else %} <a href="/comments/{{p.id}}"> {% endif %}{{p.title}}</a></p>
         <p><a href="/comments/{{p.id}}">{{p.n_comments()}} comments</a>. submitted by {{p.submitter}} on <strong>{{p.prettytime()}}</strong></p>
         <br/>
     </div>

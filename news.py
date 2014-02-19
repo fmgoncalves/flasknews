@@ -22,6 +22,7 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///news.db'
 app.secret_key = 'Z\x1f7Y\xa53/\x9f\x9b\xc6\xc3V\x07GLA\xdd}zl\x92W\xad\xfb'
 db = SQLAlchemy(app)
 
+tag_colors = ['#FF9900', '#424242', '#E9E9E9', '#BCBCBC', '#3299BB']
 
 ### AUTHENTICATION
 
@@ -99,6 +100,12 @@ class Post(db.Model):
             return sum(map(lambda x: x.value, votes_list))
         except ZeroDivisionError:
             return 0
+
+    def tagcolor(self):
+        tag = self.tag
+        color_idx = int(sha512(u'{}'.format(tag.lower()).encode('utf-8')).hexdigest(),base=16) % len(tag_colors)
+        return tag_colors[color_idx]
+
 
 class Comment(db.Model):
     id = db.Column(db.Integer, primary_key=True)
