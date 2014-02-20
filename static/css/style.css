@@ -48,7 +48,7 @@ body {
 }
 
 .posttag	{
-	border:1px solid #acacac;
-	border-radius: 20%;
+	border-radius: 4px;
 	padding: 2px 5px;
+	color: white;
 }
