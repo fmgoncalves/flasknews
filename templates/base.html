@@ -18,6 +18,9 @@
                 <li id="nav_submit"><a href="/submit">Submit</a></li>
                 {% if "username" in session %}
                 <li id="nav_logout"><a href="/logout">Logout</a></li>
+                {% else %}
+                <li id="nav_login"><a href="/login">Login</a></li>
+                <li id="nav_signup"><a href="/signup">Sign up</a></li>
                 {% endif %}
             </ul>
         </div>
