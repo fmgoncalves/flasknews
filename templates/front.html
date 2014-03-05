@@ -1,8 +1,9 @@
 {% extends 'base.html' %}
-{% block title%}Stories{% endblock %}
+{% block title%}Stories{% if unread_count > 0 %} ({{unread_count}} new in last hour){% endif%}{% endblock %}
 
 {% block headextra %}
 <link rel="alternate" type="application/atom+xml" title="Feed" href="{{ url_for('recent_feed') }}">
+<meta http-equiv="refresh" content="300">
 {% endblock %}
 
 {% block content %}

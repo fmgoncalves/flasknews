@@ -161,7 +161,8 @@ class Comment(db.Model):
 @app.route('/')
 def index():
 	posts = sorted(Post.query.all(), key=lambda x: x.time + (x.score() * 600), reverse=True)
-	return render_template('front.html', posts=posts)
+	unread_count = Post.query.filter(Post.time > timegm(gmtime())-3600).count()
+	return render_template('front.html', posts=posts, unread_count=unread_count)
 
 @app.route('/comments/<int:pid>', methods=['GET'])
 def comments(pid):
