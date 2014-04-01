@@ -1,12 +1,9 @@
 {% extends 'base.html' %}
-{% block title%}Stories{% if recent_count > 0 %} ({{recent_count}} new in last hour){% endif%}{% endblock %}
-
-{% block headextra %}
-<link rel="alternate" type="application/atom+xml" title="Feed" href="{{ url_for('recent_feed') }}">
-<meta http-equiv="refresh" content="300">
-{% endblock %}
+{% block title%}Stories by {{user}} {% if recent_count > 0 %} ({{recent_count}} new in last hour){% endif%}{% endblock %}
 
 {% block content %}
+
+<h1 class="page-header">User: {{user}}</h1>
 
 {% if not posts %}
 <p>No posts :(</p>
@@ -36,12 +33,12 @@
 
 <div class="btn-group input-group btn-group-justified" data-toggle="buttons">
 	{% if page > 1 %}
-		<a href="{{url_for('index')}}/page/{{page - 1}}" class="btn btn-primary" >Previous</a>
+		<a href="{{url_for('users',user=user)}}/page/{{page - 1}}" class="btn btn-primary" >Previous</a>
 	{% else %}
 		<a href="javascript:;" class="btn btn-primary disabled" >Previous</a>
 	{% endif %}
 	{% if next_page %}
-		<a href="{{url_for('index')}}/page/{{page+1}}" class="btn btn-primary" >Next</a>
+		<a href="{{url_for('users',user=user)}}/page/{{page+1}}" class="btn btn-primary" >Next</a>
 	{% else %}
 		<a href="javascript:;" class="btn btn-primary disabled" >Next</a>
 	{% endif %}

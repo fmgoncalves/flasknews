@@ -3,6 +3,7 @@
 from flask import Flask, render_template, request, url_for, session, redirect, Response
 from flask.ext.sqlalchemy import SQLAlchemy
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy import func
 from werkzeug.contrib.atom import AtomFeed
 
 from functools import wraps
@@ -169,6 +170,24 @@ def index(page):
 	recent_count = Post.query.filter(Post.time > timegm(gmtime())-3600).count()
 	next_page = pager.has_next
 	return render_template('front.html', posts=posts, recent_count=recent_count, page=page, next_page=next_page)
+
+@app.route('/tags/<tag>',defaults={'page': 1})
+@app.route('/tags/<tag>/page/<int:page>')
+def tags(tag, page):
+	pager = Post.query.filter(func.lower(Post.tag)==func.lower(tag)).order_by(Post.time.desc(),Post.id.desc()).paginate(page,per_page=POSTS_PER_PAGE)
+	posts = sorted(pager.items, key=lambda x: x.time + (x.score() * 600), reverse=True)
+	recent_count = Post.query.filter(Post.time > timegm(gmtime())-3600).count()
+	next_page = pager.has_next
+	return render_template('tags.html', tag=tag, posts=posts, recent_count=recent_count, page=page, next_page=next_page)
+
+@app.route('/u/<user>',defaults={'page': 1})
+@app.route('/u/<user>/page/<int:page>')
+def users(user, page):
+	pager = Post.query.filter(func.lower(Post.submitter)==func.lower(user)).order_by(Post.time.desc(),Post.id.desc()).paginate(page,per_page=POSTS_PER_PAGE)
+	posts = sorted(pager.items, key=lambda x: x.time + (x.score() * 600), reverse=True)
+	recent_count = Post.query.filter(Post.time > timegm(gmtime())-3600).count()
+	next_page = pager.has_next
+	return render_template('users.html', user=user, posts=posts, recent_count=recent_count, page=page, next_page=next_page)
 
 @app.route('/comments/<int:pid>', methods=['GET'])
 def comments(pid):
