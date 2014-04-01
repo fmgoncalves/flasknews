@@ -24,6 +24,8 @@ db = SQLAlchemy(app)
 
 tag_colors = ['FF9900', '424242', 'E9E9E9', 'BCBCBC', '3299BB']
 
+POSTS_PER_PAGE = 20
+
 ### AUTHENTICATION
 
 class User(db.Model):
@@ -158,11 +160,15 @@ class Comment(db.Model):
 	def prettytime(self):
 		return ctime(self.time)
 
-@app.route('/')
-def index():
-	posts = sorted(Post.query.all(), key=lambda x: x.time + (x.score() * 600), reverse=True)
-	unread_count = Post.query.filter(Post.time > timegm(gmtime())-3600).count()
-	return render_template('front.html', posts=posts, unread_count=unread_count)
+@app.route('/', defaults={'page': 1})
+@app.route('/posts', defaults={'page': 1})
+@app.route('/posts/page/<int:page>')
+def index(page):
+	pager = Post.query.order_by(Post.time.desc(),Post.id.desc()).paginate(page,per_page=POSTS_PER_PAGE)
+	posts = sorted(pager.items, key=lambda x: x.time + (x.score() * 600), reverse=True)
+	recent_count = Post.query.filter(Post.time > timegm(gmtime())-3600).count()
+	next_page = pager.has_next
+	return render_template('front.html', posts=posts, recent_count=recent_count, page=page, next_page=next_page)
 
 @app.route('/comments/<int:pid>', methods=['GET'])
 def comments(pid):
@@ -241,7 +247,7 @@ def vote(pid):
 def recent_feed():
 	feed = AtomFeed('Recent Articles',
 		feed_url=request.url, url=request.url_root)
-	posts = Post.query.order_by(Post.time.desc()).limit(50).all()
+	posts = Post.query.order_by(Post.time.desc(),Post.id.desc()).limit(50).all()
 	for post in posts:
 		feed.add(
 			post.title,
