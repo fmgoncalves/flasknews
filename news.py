@@ -17,6 +17,8 @@ from collections import defaultdict
 
 from hashlib import sha512
 import sys
+import os.path
+
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///news.db'
@@ -25,7 +27,19 @@ db = SQLAlchemy(app)
 
 tag_colors = ['FF9900', '424242', 'E9E9E9', 'BCBCBC', '3299BB']
 
-POSTS_PER_PAGE = 20
+POSTS_PER_PAGE = 10
+
+### Flask custom filter
+
+@app.template_filter('reverse')
+def is_image(link):
+	_, extension = os.path.splitext(link)
+	if extension.lower() in ['.jpeg', '.jpg', '.gif', '.png', '.svg']:
+		return True
+	return False
+app.jinja_env.filters['is_image'] = is_image
+###
+
 
 ### AUTHENTICATION
 
@@ -208,6 +222,8 @@ def comment():
 @requires_auth
 def submit():
 	if request.method == 'POST':
+		if not request.form['title']:
+			return render_template('submit.html', error='Post title is mandatory')
 		submission = Post(request.form['title'], request.form['link'], request.form['tag'], session['username'], request.form['content'])
 		vote(submission.id)
 		db.session.add(submission)

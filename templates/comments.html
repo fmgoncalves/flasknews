@@ -5,6 +5,15 @@
 
 <div class="link">
         <p><a href="{{p.link}}">{{p.title}}</a></p>
+        <p>
+            {% if p.link|is_image %}
+                <ul class="thumbnails">
+                  <li class="span3">
+                      <img src="{{p.link}}" class="thumbnail" style="width: 320px; height: 270px;">
+                  </li>
+                </ul>
+            {% endif %}
+        </p>
 		{% if p.content %}
         	<p>{{p.content|urlize}}</p>
         {% endif %}
