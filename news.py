@@ -291,7 +291,7 @@ def recent_feed():
 			author=post.submitter,
 			url=url_for('comments',pid=post.id),
 			links=[ { 'href' : post.link } ],
-			#categories=list(), # TODO need to have post tags first
+			categories=[{term: post.tag.lower(), label: post.tag}],
 			updated=datetime.utcfromtimestamp(post.time)
 		)
 	return feed.get_response()
