@@ -27,7 +27,7 @@
 						{{p.tag}}
 					</span>
 				</a> 
-		{% endif %} {% if p.link %} <a target='_blank' href="{{p.link}}"> {% else %} <a target='_blank' href="/comments/{{p.id}}"> {% endif %}{{p.title}}</a></p>
+		{% endif %} {% if p.link and not p.link|is_image %} <a target='_blank' href="{{p.link}}"> {% else %} <a target='_blank' href="/comments/{{p.id}}"> {% endif %}{{p.title}}</a></p>
 		<p><a href="/comments/{{p.id}}">{{p.n_comments()}} comments</a>. submitted by <a href="{{url_for('users',user=p.submitter)}}">{{p.submitter}}</a> on <strong>{{p.prettytime()}}</strong></p>
 		<br/>
 	</div>

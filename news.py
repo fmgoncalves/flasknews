@@ -180,7 +180,7 @@ class Comment(db.Model):
 @app.route('/posts/page/<int:page>')
 def index(page):
 	pager = Post.query.order_by(Post.time.desc(),Post.id.desc()).paginate(page,per_page=POSTS_PER_PAGE)
-	posts = sorted(pager.items, key=lambda x: x.time + (x.score() * 600), reverse=True)
+	posts = sorted(pager.items, key=lambda x: x.time + (x.score() * 600) + (x.n_comments() * 300), reverse=True)
 	recent_count = Post.query.filter(Post.time > timegm(gmtime())-3600).count()
 	next_page = pager.has_next
 	return render_template('front.html', posts=posts, recent_count=recent_count, page=page, next_page=next_page)
@@ -280,7 +280,7 @@ def vote(pid):
 
 @app.route('/recent.atom')
 def recent_feed():
-	feed = AtomFeed('Recent Articles',
+	feed = AtomFeed('flasknews',
 		feed_url=request.url, url=request.url_root)
 	posts = Post.query.order_by(Post.time.desc(),Post.id.desc()).limit(50).all()
 	for post in posts:
