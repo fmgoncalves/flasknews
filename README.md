@@ -1,6 +1,8 @@
 flasknews
 ---------
 
+ [![No Maintenance Intended](http://unmaintained.tech/badge.svg)](http://unmaintained.tech/)
+
 A reddit/hn clone in python/flask.  Very trivial, nothing fancy.  Just mostly playing with flask.
 
 Running it
